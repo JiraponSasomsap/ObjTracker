@@ -17,6 +17,9 @@ except:
     from base.Results import BaseResults
     from base.Drawer import BaseDrawer
 
+from .drawer import norfairDrawer
+from .results import norfairResults
+
 class norfairDevTrackedObject(TrackedObject):
     def __init__(self, 
                  obj_factory, 
@@ -59,8 +62,8 @@ class norfairDevTracker(Tracker):
         if filter_factory is None:
             filter_factory = OptimizedKalmanFilterFactory()
 
-        self.Results = BaseResults()
-        self.Drawer = BaseDrawer(self.Results)
+        self.Results = norfairResults()
+        self.Drawer = norfairDrawer(self.Results)
 
         super().__init__(distance_function, 
                          distance_threshold, 
@@ -80,20 +83,20 @@ class norfairDevTracker(Tracker):
                         'roi':(0,255,0),
                         'roni':(0,0,255)
                     },
-                    **kwds):
+                    **roi):
         '''
         Set custom tracked object factory and region configs.
 
         Parameters:
             custom_tracked_object: class to use for tracked objects
-            **kwds: additional region configurations (e.g., roi, roni, roi1, roni1)
+            **roi: additional region configurations (e.g., roi, roni, roi1, roni1)
 
         Notes:
             - "roi" = Region Of Interest
             - "roni" = Region Of No Interest
         '''
         setattr(self, '_obj_factory', _norfairDevTrackedObjectAutoFactory(custom_tracked_object))
-        self.Results.kwds = kwds 
+        self.Results.roi = roi 
         self.Drawer.color_mapping_keys = color_mapping_keys
         return self
 
@@ -162,8 +165,8 @@ class norfairDevTracker(Tracker):
                     embedding=embedding[i] if embedding is not None else None
                 )
             )
-
-        return super().update(detections=detections, **update_params)
+        super().update(detections=detections, **update_params)
+        return self.Results
     
     def _update_tracker_results(self):
         ids = []
@@ -171,20 +174,28 @@ class norfairDevTracker(Tracker):
         labels = []
         last_det_data = []
         last_det_points = []
+        last_det_boxes = []
+        estimate = []
         for obj in self.get_active_objects():
             ids.append(obj.id)
             ages.append(obj.age)
             labels.append(obj.label)
             last_det_data.append(obj.last_detection.data)
             last_det_points.append(obj.last_detection.points)
-        self.Results.ids = ids.copy()
-        self.Results.ages = ages.copy()
-        self.Results.labels = labels.copy()
-        self.Results.last_det_data = last_det_data.copy()
-        self.Results.last_det_points = last_det_points.copy()
+            if 'boxes' in list(obj.last_detection.data.keys()):
+                last_det_boxes.append(obj.last_detection.data['boxes'])
+            else: last_det_boxes.append(None)
+            estimate.append(obj.estimate)
+        self.Results.ids = ids
+        self.Results.ages = ages
+        self.Results.labels = labels
+        self.Results.last_det_data = last_det_data
+        self.Results.last_det_points = last_det_points
+        self.Results.last_det_bounding_boxes = last_det_boxes
+        self.Results.estimate
 
     def __getattribute__(self, name):
-        if name in 'update':
+        if 'update' in name:
             object.__getattribute__(self, '_update_tracker_results')()
         return object.__getattribute__(self, name)
 
