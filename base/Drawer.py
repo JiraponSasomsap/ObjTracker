@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 from norfair.drawing.drawer import Drawer
+from norfair.drawing.color import Palette
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -14,7 +15,12 @@ class BaseDrawer:
         }
         self.Results:"BaseResults" = results
 
-    def get_color(self, key):
+    @staticmethod
+    def _thickness_cal(frame):
+        thickness = int(max(frame.shape) / 500)
+        return thickness
+
+    def _get_color_roi(self, key):
         if key in self.color_mapping_keys:
             return self.color_mapping_keys[key]
         for k in self.color_mapping_keys:
@@ -22,26 +28,93 @@ class BaseDrawer:
                 return self.color_mapping_keys[k]
         return (0,0,0)
 
-    def draw_roi(self,
-                 img,
-                 tracker_results:"BaseResults" = None,
+    def draw_info(self,
+                  frame,
+                  tracker_results:"BaseResults" = None,
+                  draw_roi=True,
+                  draw_id=True,
+                  draw_points=True,
+                  draw_bounding_box=True,):
+        draw_info = frame.copy()
+        
+        if tracker_results: # update
+            self.Results = tracker_results
+
+        if draw_roi:
+            draw_info = self._draw_roi(draw_info, self.Results.roi)
+
+        print(f'{self.Results.ids = }')
+
+        if self.Results.ids:
+            for i, indx in enumerate(self.Results.ids):
+                point = self.Results.last_det_points[i]
+                if draw_points:
+                    draw_info = self._draw_point(draw_info, point, indx)
+                if draw_bounding_box:
+                    box = self.Results.last_det_bounding_boxes[i]
+                    draw_info = self._draw_box(draw_info, box, indx)
+                if draw_id:
+                    draw_info = self._draw_id(draw_info, indx, point)
+        return draw_info
+
+    def _draw_id(self, frame, idx, position, size=None, thickness=None):
+        if thickness is None:
+            thickness = self._thickness_cal(frame)
+
+        if size is None:
+            size = max(max(frame.shape) / 2000, 0.5)
+            print(size)
+
+        draw_id = frame.copy()
+        color = Palette.choose_color(idx)
+        position = np.array(position, dtype=np.int32).reshape(-1)[:2]
+        print( f'{idx}', position)
+        draw_id = Drawer.text(draw_id, f'{idx}', position, size=size, color=color, thickness=thickness)
+        return draw_id
+    
+    def _draw_box(self, frame, box, idx, thickness=None):
+        if thickness is None:
+            thickness = self._thickness_cal(frame)
+        draw_box = frame.copy()
+        box = np.array(box, dtype=np.int32).reshape(2,2)
+        color = Palette.choose_color(idx)
+        draw_box = Drawer.rectangle(draw_box, box, color, thickness)
+        return draw_box
+
+    def _draw_point(self, frame, point, idx, radius=None, thickness=None):
+        if thickness is None:
+            thickness = self._thickness_cal(frame)
+
+        if radius is None:
+            frame_scale = frame.shape[0] / 100
+            radius = int(frame_scale * 0.3)
+        
+        draw_point = frame.copy()
+        point = np.array(point, dtype=np.int32).reshape(-1)
+
+        color = Palette.choose_color(idx)
+
+        print(f'{point = }')
+
+        if len(point) == 2:
+            draw_point = Drawer.circle(draw_point, point, radius, thickness, color)
+        elif len(point) == 4:
+            draw_point = Drawer.rectangle(draw_point, point.reshape(2,2), color, thickness)
+        return draw_point
+        
+    def _draw_roi(self,
+                 frame,
+                 roi_dict,
                  font_size=1, 
                  font_thickness=2,
                  font_color=(255,255,255)):
-        im = img.copy()
-        overlay = img.copy()
-        h, w = im.shape[:2]
+        draw_roi = frame.copy()
+        overlay = frame.copy()
+        h, w = draw_roi.shape[:2]
 
-        kwds = None
-        if tracker_results or self.Results:
-            if tracker_results is not None:
-                kwds = tracker_results.Results.kwds
-            else:
-                kwds = self.Results.kwds
-
-        if kwds:
-            for key, val in kwds.items():
-                color = self.get_color(key)
+        if roi_dict:
+            for key, val in roi_dict.items():
+                color = self._get_color_roi(key)
                 if color is None:
                     continue
 
@@ -50,7 +123,7 @@ class BaseDrawer:
                 abs_val = np_val * [w, h]
                 abs_val = abs_val.astype(np.int32)
                 cv2.fillPoly(overlay, [abs_val], color=color)
-                cv2.polylines(im, [abs_val], isClosed=True, color=color, thickness=2)
+                cv2.polylines(draw_roi, [abs_val], isClosed=True, color=color, thickness=2)
 
                 M = cv2.moments(abs_val)
                 if M["m00"] != 0:
@@ -59,7 +132,7 @@ class BaseDrawer:
                 else:
                     cX, cY = abs_val[0]
 
-                Drawer.text(im, key, (cX, cY), font_size, font_color, font_thickness)
+                Drawer.text(draw_roi, key, (cX, cY), font_size, font_color, font_thickness)
 
-            cv2.addWeighted(overlay, alpha_fill, im, 1 - alpha_fill, 0, im)
-        return im
+            cv2.addWeighted(overlay, alpha_fill, draw_roi, 1 - alpha_fill, 0, draw_roi)
+        return draw_roi
