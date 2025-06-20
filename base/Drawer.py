@@ -43,8 +43,6 @@ class BaseDrawer:
         if draw_roi:
             draw_info = self._draw_roi(draw_info, self.Results.roi)
 
-        print(f'{self.Results.ids = }')
-
         if self.Results.ids:
             for i, indx in enumerate(self.Results.ids):
                 point = self.Results.last_det_points[i]
@@ -63,12 +61,10 @@ class BaseDrawer:
 
         if size is None:
             size = max(max(frame.shape) / 2000, 0.5)
-            print(size)
 
         draw_id = frame.copy()
         color = Palette.choose_color(idx)
         position = np.array(position, dtype=np.int32).reshape(-1)[:2]
-        print( f'{idx}', position)
         draw_id = Drawer.text(draw_id, f'{idx}', position, size=size, color=color, thickness=thickness)
         return draw_id
     
@@ -93,8 +89,6 @@ class BaseDrawer:
         point = np.array(point, dtype=np.int32).reshape(-1)
 
         color = Palette.choose_color(idx)
-
-        print(f'{point = }')
 
         if len(point) == 2:
             draw_point = Drawer.circle(draw_point, point, radius, thickness, color)

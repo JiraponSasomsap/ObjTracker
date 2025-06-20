@@ -97,6 +97,7 @@ class norfairDevTracker(Tracker):
         '''
         setattr(self, '_obj_factory', _norfairDevTrackedObjectAutoFactory(custom_tracked_object))
         self.Results.roi = roi 
+        self.Results.DISTANCE_THRESHOLD = self.distance_threshold
         self.Drawer.color_mapping_keys = color_mapping_keys
         return self
 
@@ -167,7 +168,7 @@ class norfairDevTracker(Tracker):
             )
         super().update(detections=detections, **update_params)
         return self.Results
-    
+
     def _update_tracker_results(self):
         ids = []
         ages = []
@@ -176,23 +177,29 @@ class norfairDevTracker(Tracker):
         last_det_points = []
         last_det_boxes = []
         estimate = []
+        hit_counter = []
+
         for obj in self.get_active_objects():
             ids.append(obj.id)
             ages.append(obj.age)
             labels.append(obj.label)
             last_det_data.append(obj.last_detection.data)
             last_det_points.append(obj.last_detection.points)
+            
             if 'boxes' in list(obj.last_detection.data.keys()):
                 last_det_boxes.append(obj.last_detection.data['boxes'])
             else: last_det_boxes.append(None)
+
             estimate.append(obj.estimate)
+            hit_counter.append(obj.hit_counter)
         self.Results.ids = ids
         self.Results.ages = ages
         self.Results.labels = labels
         self.Results.last_det_data = last_det_data
         self.Results.last_det_points = last_det_points
         self.Results.last_det_bounding_boxes = last_det_boxes
-        self.Results.estimate
+        self.Results.estimate = estimate
+        self.Results.hit_counter = hit_counter
 
     def __getattribute__(self, name):
         if 'update' in name:
