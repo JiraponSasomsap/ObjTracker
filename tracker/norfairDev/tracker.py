@@ -138,8 +138,8 @@ class norfairDevTracker(Tracker):
             except Exception as e:
                 raise TypeError("points must be convertible to a numpy.ndarray") from e
 
-        if points.ndim != 2 or points.shape[1] not in (2, 4):
-            raise ValueError("points must be a 2D array with shape (N, 2) or (N, 4)")
+        # if points.ndim != 2 or points.shape[1] not in (2, 4):
+        #     raise ValueError("points must be a 2D array with shape (N, 2) or (N, 4)")
 
         param_dict = {
             'scores': scores,
