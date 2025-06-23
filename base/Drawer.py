@@ -64,8 +64,12 @@ class BaseDrawer:
 
         draw_id = frame.copy()
         color = Palette.choose_color(idx)
-        position = np.array(position, dtype=np.int32).reshape(-1)[:2]
+        position = np.array(position, dtype=np.int32).reshape(-1)
+        if len(position) == 4: # get center
+            p1, p2 = position.reshape(2,2)
+            position = ((p2 - p1) // 2) + p1
         draw_id = Drawer.text(draw_id, f'{idx}', position, size=size, color=color, thickness=thickness)
+        draw_id = Drawer.circle(draw_id, position, 2, thickness, color)
         return draw_id
     
     def _draw_box(self, frame, box, idx, thickness=None):

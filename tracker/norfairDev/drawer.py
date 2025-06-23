@@ -30,7 +30,6 @@ class norfairDrawer(BaseDrawer):
 
         if self.Results.ids:
             for i, indx in enumerate(self.Results.ids):
-
                 if draw_estimate:
                     estimate = self.Results.estimate[i]
                     draw_info = self._draw_estimate(frame=draw_info, 
@@ -70,6 +69,11 @@ class norfairDrawer(BaseDrawer):
 
         if len(point) == 2:
             draw_estimate = Drawer.circle(draw_estimate, point, int(distance_threshold), thickness, color)
+            draw_estimate = Drawer.circle(draw_estimate, point, 2, thickness, color)
         else:
-            draw_estimate = Drawer.circle(draw_estimate, point.reshape(2,2), int(distance_threshold), thickness, color)
+            draw_estimate = Drawer.rectangle(draw_estimate, point.reshape(2,2),color, thickness)
+            # center call 
+            p1, p2 = point.reshape(2,2)
+            ct = ((p2 - p1) // 2) + p1
+            draw_estimate = Drawer.circle(draw_estimate, ct, int(distance_threshold), thickness, color)
         return super()._draw_point(draw_estimate, point, idx, radius, thickness)
