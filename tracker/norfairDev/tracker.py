@@ -7,6 +7,7 @@ import numpy as np
 import sys
 import os
 import warnings
+from shapely.geometry import Polygon, Point
 
 try:
     from ...base.Results import BaseResults
@@ -100,14 +101,63 @@ class norfairDevTracker(Tracker):
         self.Results.DISTANCE_THRESHOLD = self.distance_threshold
         self.Drawer.color_mapping_keys = color_mapping_keys
         return self
+    
+    def _preprocess_update_input(self, frame, points, scores, data, label, embedding):
+        if self.Results.roi is None:
+            return points, scores, data, label, embedding
+
+        if all(not 'roi' in key for key in self.Results.roi):
+            return points, scores, data, label, embedding
+        
+        h, w = frame.shape[:2]
+
+        new_points = []
+        new_scores = [] if scores is not None else None
+        new_data = [] if data is not None else None
+        new_label = [] if label is not None else None
+        new_embedding = [] if embedding is not None else None
+
+        for i in range(len(points)):
+            point = points[i]
+            center = None
+            if len(point) == 4:
+                p1, p2 = np.array(point).reshape(2, 2)
+                center = Point(((p2 - p1) / 2) + p1)
+            elif len(point) == 2:
+                center = Point(np.array(point))
+            else:
+                raise ValueError(f"Unexpected point format at index {i}: {point}")
+            
+            for key, val in self.Results.roi.items():
+                if 'roi' in key:
+                    arr = np.array(val) * [w, h]
+                    arr = np.vstack([arr, arr[0]])
+                    roi = Polygon(arr)
+                    if center.within(roi):
+                        new_points.append(points[i])
+                        if new_scores is not None:
+                            new_scores.append(scores[i])
+                        if new_label is not None:
+                            new_label.append(label[i])
+                        if new_embedding is not None:
+                            new_embedding.append(embedding[i])
+                        if new_data is not None:
+                            new_data.append(data[i])
+                        break
+        return (np.array(new_points),
+                new_scores,
+                new_data,
+                new_label,
+                new_embedding,)
 
     def update_detections(
         self,
-        points: np.ndarray,
-        scores=None,
-        data=None,
-        label=None,
-        embedding=None,
+        frame:np.ndarray,
+        points:np.ndarray|list,
+        scores:np.ndarray|list=None,
+        data:np.ndarray|list=None,
+        label:np.ndarray|list=None,
+        embedding:np.ndarray|list=None,
         **update_params
     ):
         '''
@@ -151,11 +201,22 @@ class norfairDevTracker(Tracker):
         for name, param in param_dict.items():
             if param is not None and len(param) != len(points):
                 raise ValueError(f"Length mismatch: {name} has length {len(param)} but points has length {len(points)}")
+            
+        (
+            points, scores, data, label, embedding
+        ) = self._preprocess_update_input(
+            frame=frame,
+            points=points, 
+            scores=scores, 
+            data=data, 
+            label=label, 
+            embedding=embedding, 
+        )
 
         detections = []
         for i in range(len(points)):
             point = points[i]
-            if points.shape[1] == 4:
+            if len(point) == 4:
                 point = point.reshape(2, 2)
             detections.append(
                 Detection(
