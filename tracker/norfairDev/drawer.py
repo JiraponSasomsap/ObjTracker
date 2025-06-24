@@ -31,20 +31,21 @@ class norfairDrawer(BaseDrawer):
         if self.Results.ids:
             for i, indx in enumerate(self.Results.ids):
                 if draw_estimate:
-                    estimate = self.Results.estimate[i]
-                    draw_info = self._draw_estimate(frame=draw_info, 
-                                                    point=estimate,
-                                                    idx=indx, 
-                                                    distance_threshold=self.Results.DISTANCE_THRESHOLD)
-
-                point = self.Results.last_det_points[i]
-                if draw_points:
-                    draw_info = self._draw_point(draw_info, point, indx)
-                if draw_id:
-                    draw_info = self._draw_id(draw_info, indx, point)
-                if draw_bounding_box:
-                    box = self.Results.last_det_bounding_boxes[i]
-                    draw_info = self._draw_box(draw_info, box, indx)
+                    if not self.Results.is_update_detections[i]:
+                        estimate = self.Results.estimate[i]
+                        draw_info = self._draw_estimate(frame=draw_info, 
+                                                        point=estimate,
+                                                        idx=indx, 
+                                                        distance_threshold=self.Results.DISTANCE_THRESHOLD)
+                if self.Results.is_update_detections[i]:
+                    point = self.Results.last_det_points[i]
+                    if draw_points:
+                        draw_info = self._draw_point(draw_info, point, indx)
+                    if draw_id:
+                        draw_info = self._draw_id(draw_info, indx, point)
+                    if draw_bounding_box:
+                        box = self.Results.last_det_bounding_boxes[i]
+                        draw_info = self._draw_box(draw_info, box, indx)
             
         return draw_info
     
