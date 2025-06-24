@@ -12,7 +12,7 @@ class norfairDrawer(BaseDrawer):
     def __init__(self, results = None):
         super().__init__(results)
 
-    def draw_info(self,
+    def draw_tracker_results(self,
                   frame,
                   tracker_results:"norfairResults" = None,
                   draw_roi=True,
@@ -20,34 +20,34 @@ class norfairDrawer(BaseDrawer):
                   draw_points=True,
                   draw_bounding_box=True,
                   draw_estimate=True):
-        draw_info = frame.copy()
+        draw_tracker_results = frame.copy()
         
         if tracker_results: # update
             self.Results = tracker_results
 
         if draw_roi:
-            draw_info = self._draw_roi(draw_info, self.Results.roi)
+            draw_tracker_results = self._draw_roi(draw_tracker_results, self.Results.roi)
 
         if self.Results.ids:
             for i, indx in enumerate(self.Results.ids):
                 if draw_estimate:
                     if not self.Results.is_update_detections[i]:
                         estimate = self.Results.estimate[i]
-                        draw_info = self._draw_estimate(frame=draw_info, 
+                        draw_tracker_results = self._draw_estimate(frame=draw_tracker_results, 
                                                         point=estimate,
                                                         idx=indx, 
                                                         distance_threshold=self.Results.DISTANCE_THRESHOLD)
                 if self.Results.is_update_detections[i]:
                     point = self.Results.last_det_points[i]
                     if draw_points:
-                        draw_info = self._draw_point(draw_info, point, indx)
+                        draw_tracker_results = self._draw_point(draw_tracker_results, point, indx)
                     if draw_id:
-                        draw_info = self._draw_id(draw_info, indx, point)
+                        draw_tracker_results = self._draw_id(draw_tracker_results, indx, point)
                     if draw_bounding_box:
                         box = self.Results.last_det_bounding_boxes[i]
-                        draw_info = self._draw_box(draw_info, box, indx)
+                        draw_tracker_results = self._draw_box(draw_tracker_results, box, indx)
             
-        return draw_info
+        return draw_tracker_results
     
     def _draw_estimate(self, 
                        frame, 

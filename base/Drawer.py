@@ -28,32 +28,32 @@ class BaseDrawer:
                 return self.color_mapping_keys[k]
         return (0,0,0)
 
-    def draw_info(self,
+    def draw_tracker_results(self,
                   frame,
                   tracker_results:"BaseResults" = None,
                   draw_roi=True,
                   draw_id=True,
                   draw_points=True,
                   draw_bounding_box=True,):
-        draw_info = frame.copy()
+        draw_tracker_results = frame.copy()
         
         if tracker_results: # update
             self.Results = tracker_results
 
         if draw_roi:
-            draw_info = self._draw_roi(draw_info, self.Results.roi)
+            draw_tracker_results = self._draw_roi(draw_tracker_results, self.Results.roi)
 
         if self.Results.ids:
             for i, indx in enumerate(self.Results.ids):
                 point = self.Results.last_det_points[i]
                 if draw_points:
-                    draw_info = self._draw_point(draw_info, point, indx)
+                    draw_tracker_results = self._draw_point(draw_tracker_results, point, indx)
                 if draw_bounding_box:
                     box = self.Results.last_det_bounding_boxes[i]
-                    draw_info = self._draw_box(draw_info, box, indx)
+                    draw_tracker_results = self._draw_box(draw_tracker_results, box, indx)
                 if draw_id:
-                    draw_info = self._draw_id(draw_info, indx, point)
-        return draw_info
+                    draw_tracker_results = self._draw_id(draw_tracker_results, indx, point)
+        return draw_tracker_results
 
     def _draw_id(self, frame, idx, position, size=None, thickness=None):
         if thickness is None:
