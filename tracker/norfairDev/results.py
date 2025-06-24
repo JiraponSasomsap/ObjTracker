@@ -7,3 +7,4 @@ class norfairResults(BaseResults):
     estimate: Optional[List[Any]] = None
     hit_counter: List[int] = None
     DISTANCE_THRESHOLD:float = None
+    is_update_detections: List[int] = None

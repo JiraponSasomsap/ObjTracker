@@ -166,8 +166,12 @@ class norfairDevTracker(Tracker):
                     embedding=embedding[i] if embedding is not None else None
                 )
             )
-        super().update(detections=detections, **update_params)
+        self.update(detections=detections, bounding_boxes_input=points, **update_params)
         return self.Results
+    
+    def update(self, detections = None, bounding_boxes_input = None, period = 1, coord_transformations = None):
+        self.Results.bounding_boxes_input = bounding_boxes_input # subscribe bounding boxes input
+        return super().update(detections, period, coord_transformations)
 
     def _update_tracker_results(self):
         ids = []
@@ -178,6 +182,7 @@ class norfairDevTracker(Tracker):
         last_det_boxes = []
         estimate = []
         hit_counter = []
+        is_update_detections = []
 
         for obj in self.get_active_objects():
             ids.append(obj.id)
@@ -191,6 +196,17 @@ class norfairDevTracker(Tracker):
             else: last_det_boxes.append(None)
 
             estimate.append(obj.estimate)
+
+            if obj.id in self.Results.ids:
+                index = self.Results.ids.index(obj.id)
+                hit = self.Results.hit_counter[index]
+                if obj.hit_counter < hit:
+                    is_update_detections.append(False)
+                else:
+                    is_update_detections.append(True)
+            else:
+                is_update_detections.append(True)
+
             hit_counter.append(obj.hit_counter)
         self.Results.ids = ids
         self.Results.ages = ages
@@ -200,9 +216,10 @@ class norfairDevTracker(Tracker):
         self.Results.last_det_bounding_boxes = last_det_boxes
         self.Results.estimate = estimate
         self.Results.hit_counter = hit_counter
+        self.Results.is_update_detections = is_update_detections
 
     def __getattribute__(self, name):
-        if 'update' in name:
+        if name == 'update':
             object.__getattribute__(self, '_update_tracker_results')()
         return object.__getattribute__(self, name)
 
