@@ -3,6 +3,7 @@ from typing import List, Any, Optional, Dict
 
 @dataclass
 class BaseResults:
+    bounding_boxes_input: Optional[List[Any]] = None
     ids: Optional[List[Any]] = None
     ages: Optional[List[int]] = None
     labels: Optional[List[Any]] = None
