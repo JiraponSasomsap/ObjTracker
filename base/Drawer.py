@@ -35,25 +35,25 @@ class BaseDrawer:
                   draw_id=True,
                   draw_points=True,
                   draw_bounding_box=True,):
-        draw_tracker_results = frame.copy()
+        im = frame.copy()
         
         if tracker_results: # update
             self.Results = tracker_results
 
         if draw_roi:
-            draw_tracker_results = self._draw_roi(draw_tracker_results, self.Results.roi)
+            im = self._draw_roi(im, self.Results.roi)
 
         if self.Results.ids:
             for i, indx in enumerate(self.Results.ids):
                 point = self.Results.last_det_points[i]
                 if draw_points:
-                    draw_tracker_results = self._draw_point(draw_tracker_results, point, indx)
+                    im = self._draw_point(im, point, indx)
                 if draw_bounding_box:
                     box = self.Results.last_det_bounding_boxes[i]
-                    draw_tracker_results = self._draw_box(draw_tracker_results, box, indx)
+                    im = self._draw_box(im, box, indx)
                 if draw_id:
-                    draw_tracker_results = self._draw_id(draw_tracker_results, indx, point)
-        return draw_tracker_results
+                    im = self._draw_id(im, indx, point)
+        return im
 
     def _draw_id(self, frame, idx, position, size=None, thickness=None):
         if thickness is None:
