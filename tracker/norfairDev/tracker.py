@@ -8,6 +8,9 @@ import sys
 import os
 import warnings
 from shapely.geometry import Polygon, Point
+from pathlib import Path
+import yaml
+from datetime import datetime
 
 try:
     from ...base.Results import BaseResults
@@ -66,6 +69,20 @@ class norfairDevTracker(Tracker):
         self.Results = norfairResults()
         self.Drawer = norfairDrawer(self.Results)
 
+        self._config = {
+            'distance_function':distance_function if isinstance(distance_function, str) else distance_function.__class__.__name__,
+            'distance_threshold':distance_threshold,
+            'hit_counter_max':hit_counter_max,
+            'initialization_delay':initialization_delay,
+            'pointwise_hit_counter_max':pointwise_hit_counter_max,
+            'detection_threshold':detection_threshold,
+            'filter_factory':filter_factory.__class__.__name__,
+            'past_detections_length':past_detections_length,
+            'reid_distance_function':reid_distance_function.__class__.__name__ if reid_distance_function is not None else None,
+            'reid_distance_threshold':reid_distance_threshold,
+            'reid_hit_counter_max':reid_hit_counter_max,
+        }
+
         super().__init__(distance_function, 
                          distance_threshold, 
                          hit_counter_max, 
@@ -100,6 +117,14 @@ class norfairDevTracker(Tracker):
         self.Results.roi = roi 
         self.Results.DISTANCE_THRESHOLD = self.distance_threshold
         self.Drawer.color_mapping_keys = color_mapping_keys
+        return self
+    
+    def save_config(self, dst='.'):
+        dt = datetime.now().strftime("%d-%m-%Y-%H%M%S")
+        dst = Path(dst) / f'tracker_config/{self.__class__.__name__} {dt}.yaml'
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        with open(dst, "w") as f:
+            yaml.dump(self._config, f, default_flow_style=False, sort_keys=False)
         return self
     
     def _preprocess_update_input(self, frame, points, scores, data, label, embedding):
