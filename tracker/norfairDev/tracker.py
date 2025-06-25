@@ -23,6 +23,7 @@ except:
 
 from .drawer import norfairDrawer
 from .results import norfairResults
+from dataclasses import dataclass
 
 class norfairDevTrackedObject(TrackedObject):
     def __init__(self, 
@@ -82,6 +83,8 @@ class norfairDevTracker(Tracker):
             'reid_distance_threshold':reid_distance_threshold,
             'reid_hit_counter_max':reid_hit_counter_max,
         }
+
+        self.callback = Callback()
 
         super().__init__(distance_function, 
                          distance_threshold, 
@@ -258,51 +261,46 @@ class norfairDevTracker(Tracker):
     def update(self, detections = None, bounding_boxes_input = None, period = 1, coord_transformations = None):
         self.Results.bounding_boxes_input = bounding_boxes_input # subscribe bounding boxes input
         return super().update(detections, period, coord_transformations)
-
+    
     def _update_tracker_results(self):
-        ids = []
-        ages = []
-        labels = []
-        last_det_data = []
-        last_det_points = []
-        last_det_boxes = []
-        estimate = []
-        hit_counter = []
-        is_update_detections = []
+        result_dict = {
+            'ids': [],
+            'ages': [],
+            'labels': [],
+            'last_det_data': [],
+            'last_det_points': [],
+            'last_det_bounding_boxes': [],
+            'estimate': [],
+            'hit_counter': [],
+            'is_update_detections': [],
+        }
 
         for obj in self.get_active_objects():
-            ids.append(obj.id)
-            ages.append(obj.age)
-            labels.append(obj.label)
-            last_det_data.append(obj.last_detection.data)
-            last_det_points.append(obj.last_detection.points)
-            
-            if 'boxes' in list(obj.last_detection.data.keys()):
-                last_det_boxes.append(obj.last_detection.data['boxes'])
-            else: last_det_boxes.append(None)
-
-            estimate.append(obj.estimate)
+            result_dict['ids'].append(obj.id)
+            result_dict['ages'].append(obj.age)
+            result_dict['labels'].append(obj.label)
+            result_dict['last_det_data'].append(obj.last_detection.data)
+            result_dict['last_det_points'].append(obj.last_detection.points)
+            result_dict['last_det_bounding_boxes'].append(
+                obj.last_detection.data.get('boxes')
+            )
+            result_dict['estimate'].append(obj.estimate)
 
             if obj.id in self.Results.ids:
                 index = self.Results.ids.index(obj.id)
                 hit = self.Results.hit_counter[index]
-                if obj.hit_counter < hit:
-                    is_update_detections.append(False)
-                else:
-                    is_update_detections.append(True)
+                result_dict['is_update_detections'].append(obj.hit_counter >= hit)
             else:
-                is_update_detections.append(True)
+                result_dict['is_update_detections'].append(True)
 
-            hit_counter.append(obj.hit_counter)
-        self.Results.ids = ids
-        self.Results.ages = ages
-        self.Results.labels = labels
-        self.Results.last_det_data = last_det_data
-        self.Results.last_det_points = last_det_points
-        self.Results.last_det_bounding_boxes = last_det_boxes
-        self.Results.estimate = estimate
-        self.Results.hit_counter = hit_counter
-        self.Results.is_update_detections = is_update_detections
+            result_dict['hit_counter'].append(obj.hit_counter)
+
+            if callable(self.callback._update_tracker_results):
+                self.callback._update_tracker_results(obj, result_dict)
+
+        # assign values back to self.Results
+        for k, v in result_dict.items():
+            setattr(self.Results, k, v)
 
     def __getattribute__(self, name):
         if name == 'update':
@@ -342,3 +340,7 @@ class _norfairDevTrackedObjectAutoFactory(_TrackedObjectFactory):
             reid_hit_counter_max=reid_hit_counter_max,
             coord_transformations=coord_transformations,
         )
+    
+@dataclass
+class Callback:
+    _update_tracker_results = None
