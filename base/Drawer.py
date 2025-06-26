@@ -17,9 +17,12 @@ class BaseDrawer:
 
     @staticmethod
     def _thickness_cal(frame):
-        thickness = int(max(frame.shape) / 500)
-        return thickness
-
+        return int(max(frame.shape) / 500)
+    
+    @staticmethod
+    def _font_scale_cal(frame):
+        return max(max(frame.shape) / 2000, 0.5)
+    
     def _get_color_roi(self, key):
         if key in self.color_mapping_keys:
             return self.color_mapping_keys[key]
