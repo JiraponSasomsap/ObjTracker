@@ -25,6 +25,10 @@ from .drawer import norfairDrawer
 from .results import norfairResults
 from dataclasses import dataclass
 
+@dataclass
+class TrackerCallback:
+    _update_tracker_results = None
+
 class norfairDevTrackedObject(TrackedObject):
     def __init__(self, 
                  obj_factory, 
@@ -84,7 +88,7 @@ class norfairDevTracker(Tracker):
             'reid_hit_counter_max':reid_hit_counter_max,
         }
 
-        self.callback = Callback()
+        self.callback = TrackerCallback()
 
         super().__init__(distance_function, 
                          distance_threshold, 
@@ -260,6 +264,7 @@ class norfairDevTracker(Tracker):
     
     def update(self, detections = None, bounding_boxes_input = None, period = 1, coord_transformations = None):
         self.Results.bounding_boxes_input = bounding_boxes_input # subscribe bounding boxes input
+        self._update_tracker_results()
         return super().update(detections, period, coord_transformations)
     
     def _update_tracker_results(self):
@@ -301,12 +306,7 @@ class norfairDevTracker(Tracker):
         # assign values back to self.Results
         for k, v in result_dict.items():
             setattr(self.Results, k, v)
-
-    def __getattribute__(self, name):
-        if name == 'update':
-            object.__getattribute__(self, '_update_tracker_results')()
-        return object.__getattribute__(self, name)
-
+        
 class _norfairDevTrackedObjectAutoFactory(_TrackedObjectFactory):
     def __init__(self, object_class: type):
         super().__init__()
@@ -340,7 +340,3 @@ class _norfairDevTrackedObjectAutoFactory(_TrackedObjectFactory):
             reid_hit_counter_max=reid_hit_counter_max,
             coord_transformations=coord_transformations,
         )
-    
-@dataclass
-class Callback:
-    _update_tracker_results = None
