@@ -13,12 +13,12 @@ import yaml
 from datetime import datetime
 
 try:
-    from ...base.Results import BaseResults
+    from ...base.Results import BaseResultsTracker
     from ...base.Drawer import BaseDrawer
 except:
     warnings.warn("Relative imports failed. Falling back to absolute imports.")
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # Add parent directory to path
-    from base.Results import BaseResults
+    from base.Results import BaseResultsTracker
     from base.Drawer import BaseDrawer
 
 from .drawer import norfairDrawer
@@ -287,7 +287,7 @@ class norfairDevTracker(Tracker):
             result_dict['last_det_data'].append(obj.last_detection.data)
             result_dict['last_det_points'].append(obj.last_detection.points)
             result_dict['last_det_bounding_boxes'].append(
-                obj.last_detection.data.get('boxes')
+                obj.last_detection.data.get('box_coords')
             )
             result_dict['estimate'].append(obj.estimate)
 

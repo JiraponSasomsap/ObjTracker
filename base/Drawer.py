@@ -5,15 +5,15 @@ from norfair.drawing.color import Palette
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .Results import BaseResults
+    from .Results import BaseResultsTracker
 
 class BaseDrawer:
-    def __init__(self, results:"BaseResults"=None):
+    def __init__(self, results:"BaseResultsTracker"=None):
         self.color_mapping_keys = {
             'roi':(0,255,0),
             'roni':(0,0,255)
         }
-        self.Results:"BaseResults" = results
+        self.Results:"BaseResultsTracker" = results
 
     @staticmethod
     def _thickness_cal(frame):
@@ -29,11 +29,11 @@ class BaseDrawer:
         for k in self.color_mapping_keys:
             if k in key:
                 return self.color_mapping_keys[k]
-        return (0,0,0)
+        return None
 
     def draw_tracker_results(self,
                   frame,
-                  tracker_results:"BaseResults" = None,
+                  tracker_results:"BaseResultsTracker" = None,
                   draw_roi=True,
                   draw_id=True,
                   draw_points=True,

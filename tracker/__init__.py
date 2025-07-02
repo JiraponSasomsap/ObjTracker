@@ -1,7 +1,7 @@
 from ..base.Drawer import BaseDrawer
-from ..base.Results import BaseResults
+from ..base.Results import BaseResultsTracker
 
 __all__ = [
     'BaseDrawer',
-    'BaseResults',
+    'BaseResultsTracker',
 ]

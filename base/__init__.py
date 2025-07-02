@@ -1,2 +1,2 @@
-from .Results import BaseResults
+from .Results import BaseResultsTracker
 from .Drawer import BaseDrawer

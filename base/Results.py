@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Any, Optional, Dict
 
 @dataclass
-class BaseResults:
+class BaseResultsTracker:
     bounding_boxes_input: Optional[List[Any]] = None
     ids: Optional[List[Any]] = None
     ages: Optional[List[int]] = None
